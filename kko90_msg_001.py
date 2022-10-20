@@ -44,7 +44,7 @@ def job():
 
     today = date.today()
     print(today)
-    msg_list = KkoMsg.objects.filter(result='요청', send_at__contains=today)
+    msg_list = KkoMsg.objects.filter(result='요청', request_at__contains=today)
     print(msg_list)
 
 
@@ -75,7 +75,7 @@ def job():
         driver.get(kko_url)
         driver.find_element(By.XPATH, '//*[@id="chatWrite"]').send_keys(kko_msg)
         driver.find_element(By.XPATH, '//*[@id="kakaoWrap"]/div[1]/div[2]/div/div[2]/div/form/fieldset/button').click()
-        time.sleep(2)
+        time.sleep(3)
 
         msg.result = '전송완료'
         msg.save()
@@ -176,7 +176,7 @@ def job():
 
 # # job_set(today_ad_list[today_ad_no - 1])
 # schedule.every().day.at("10:59:40").do(job_set, today_ad_list[today_ad_no - 1])
-schedule.every(10).seconds.do(job)
+schedule.every(20).seconds.do(job)
 
 while True:
     schedule.run_pending()

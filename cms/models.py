@@ -11,7 +11,7 @@ class KkoMsg(models.Model):
     client_id = models.CharField(max_length=128, verbose_name='고객번호', blank=True, null=True)
     kko_url = models.CharField(max_length=255, verbose_name='카카오링크')
     request_at = models.DateTimeField(auto_now_add=True, verbose_name='요청일시')
-    send_at = models.DateTimeField(verbose_name='요청일시', blank=True, null=True)
+    send_at = models.DateTimeField(verbose_name='요청일시', blank=True, null=True, auto_now=True)
     result = models.CharField(max_length=64, default='요청', verbose_name='상태', blank=True, null=True)
 
     class Meta:
