@@ -44,7 +44,7 @@ def job():
 
     today = date.today()
     print(today)
-    msg_list = KkoMsg.objects.filter(result='요청', send_at__contains=today, agency_name='FURIXON')
+    msg_list = KkoMsg.objects.filter(result='요청', send_at__contains=today)
     print(msg_list)
 
 
@@ -78,7 +78,7 @@ def job():
         time.sleep(2)
 
         msg.result = '전송완료'
-        # msg.save()
+        msg.save()
 
 # def job_set(adData):
 #     print('### job_set 실행')

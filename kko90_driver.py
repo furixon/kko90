@@ -32,8 +32,8 @@ django.setup()
 from cms.models import KkoMsg, Agency
 
 
-# agency_all = Agency.objects.all()
-agency_all = Agency.objects.filter(agency_name='FURIXON')
+agency_all = Agency.objects.all()
+# agency_all = Agency.objects.filter(agency_name='FURIXON')
 agency_count = agency_all.count()
 
 print('### 전체 지점 수 => ', agency_count)
