@@ -74,7 +74,8 @@ def job():
 
         driver.get(kko_url)
         driver.find_element(By.XPATH, '//*[@id="chatWrite"]').send_keys(kko_msg)
-        driver.find_element(By.XPATH, '//*[@id="kakaoWrap"]/div[1]/div[2]/div/div[2]/div/form/fieldset/button').click()
+        msg_button = driver.find_element(By.XPATH, '//*[@id="kakaoWrap"]/div[1]/div[2]/div/div[2]/div/form/fieldset/button')
+        driver.execute_script("arguments[0].click();", msg_button)
         time.sleep(3)
 
         msg.result = '전송완료'
