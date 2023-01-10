@@ -32,12 +32,16 @@ django.setup()
 from cms.models import KkoMsg, Agency
 
 
+# 상용 지점 계정
 agency_all = Agency.objects.all()
+
+# 테스트 지점 계
 # agency_all = Agency.objects.filter(agency_name='FURIXON')
+
 agency_count = agency_all.count()
 
 print('### 전체 지점 수 => ', agency_count)
-
+print('### Agency', agency_all)
 
 # LOGIN_INFO = {
 #     'siteUrl': 'https://center-pf.kakao.com/',
@@ -58,16 +62,21 @@ def get_driver(agency):
     jobDriver.get(LOGIN_INFO['siteUrl'])
 
     print('### 웹 드라이버 로딩을 시작합니다.........\n')
+    
 
     # 카카오 로그인
-    jobDriver.find_element(By.XPATH, '//*[@id="id_email_2"]').send_keys(agency.kko_id)
-    jobDriver.find_element(By.XPATH, '//*[@id="id_password_3"]').send_keys(agency.kko_pass)
+    jobDriver.find_element(By.XPATH, '//*[@id="input-loginKey"]').send_keys(agency.kko_id)
+    
+    jobDriver.find_element(By.XPATH, '//*[@id="input-password"]').send_keys(agency.kko_pass)
+
+
+
 
     try:
         # 캡챠 처리
         # capcha = input('Input Capcha Text : ')
         # jobDriver.find_element_by_xpath('recaptcha_response_field').send_keys(capcha)
-        jobDriver.find_element(By.XPATH, '//*[@id="login-form"]/fieldset/div[8]/button[1]').click()
+        jobDriver.find_element(By.XPATH, '//*[@id="mainContent"]/div/div/form/div[4]/button[1]').click()
 
         print('### 로그인이 완료되었습니다............\n')
 

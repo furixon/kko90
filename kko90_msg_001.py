@@ -44,7 +44,8 @@ def job():
 
     today = date.today()
     print(today)
-    msg_list = KkoMsg.objects.filter(result='요청', request_at__contains=today)
+    msg_list = KkoMsg.objects.filter(result='요청', request_at__icontains=today)
+    # msg_list = KkoMsg.objects.filter(agency_name='FURIXON')
     print(msg_list)
 
 
@@ -68,15 +69,36 @@ def job():
 
         kko_url = msg.kko_url
         kko_msg = MsgTemplate.objects.filter(msg_index=msg.msg_index)[0].msg_content
+        kko_msg_line = kko_msg.replace('\n', '\r').split('\r')
 
-        print(kko_msg)
-        print(kko_url)
+        kko_image = 'http://furixon501.iptime.org:8001/media/' + str(MsgTemplate.objects.filter(msg_index=msg.msg_index)[0].img_content)
+        kko_link = MsgTemplate.objects.filter(msg_index=msg.msg_index)[0].link_content
+
+        print(kko_image)
+
 
         driver.get(kko_url)
-        driver.find_element(By.XPATH, '//*[@id="chatWrite"]').send_keys(kko_msg)
+        for msg_line in kko_msg_line:
+            
+            driver.find_element(By.XPATH, '//*[@id="chatWrite"]').send_keys(msg_line)
+            driver.find_element(By.XPATH, '//*[@id="chatWrite"]').send_keys(Keys.SHIFT + '\n')
+            
         msg_button = driver.find_element(By.XPATH, '//*[@id="kakaoWrap"]/div[1]/div[2]/div/div[2]/div/form/fieldset/button')
         driver.execute_script("arguments[0].click();", msg_button)
-        time.sleep(3)
+
+        if kko_image == 'http://furixon501.iptime.org:8001/media/':
+            print('### No images')
+        else:
+            time.sleep(0.5)
+            driver.find_element(By.XPATH, '//*[@id="chatWrite"]').send_keys(kko_image)
+            driver.execute_script("arguments[0].click();", msg_button)
+
+        if kko_link:
+            time.sleep(0.5)
+            driver.find_element(By.XPATH, '//*[@id="chatWrite"]').send_keys(kko_link)
+            driver.execute_script("arguments[0].click();", msg_button)
+
+        time.sleep(1)
 
         msg.result = '전송완료'
         msg.save()
@@ -177,7 +199,7 @@ def job():
 
 # # job_set(today_ad_list[today_ad_no - 1])
 # schedule.every().day.at("10:59:40").do(job_set, today_ad_list[today_ad_no - 1])
-schedule.every(20).seconds.do(job)
+schedule.every(1).seconds.do(job)
 
 while True:
     schedule.run_pending()

@@ -56,5 +56,21 @@ class MsgTemplateResource(resources.ModelResource):
 
 @admin.register(MsgTemplate)
 class MsgTemplateAdmin(ImportExportModelAdmin):
-    list_display = list_display_links = ['send_type', 'msg_index', 'msg_content', 'update_at', ]
+    list_display = list_display_links = ['send_type', 'msg_index', 'msg_content', 'img_content', 'link_content', 'update_at', ]
     resource_classes = [MsgTemplateResource]
+
+
+class PublicMsgTemplateResource(resources.ModelResource):
+
+    class Meta:
+        model = PublicMsgTemplate
+        skip_unchanged = True
+        report_skipped = False
+        exclude = ('id', 'update_at')
+        import_id_fields = ('send_type', 'msg_index')
+
+
+@admin.register(PublicMsgTemplate)
+class MsgTemplateAdmin(ImportExportModelAdmin):
+    list_display = list_display_links = ['msg_index', 'msg_content', 'img_content', 'link_content', 'start_at', 'end_at', 'update_at', ]
+    resource_classes = [PublicMsgTemplateResource]
