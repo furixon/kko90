@@ -1,7 +1,6 @@
 '''
-    RakutenAuto
-    * Auto uploader for Rakuten RMS Version 1.0
-    * Copyright (c) 2018 Furixon, Inc. All Rights Reserved.
+    * KKO90 Auto Message Sender v1.0
+    * Copyright (c) 2022 Furixon, Inc. All Rights Reserved.
 '''
 
 from selenium import webdriver
@@ -44,8 +43,8 @@ def job():
 
     today = date.today()
     print(today)
-    msg_list = KkoMsg.objects.filter(result='요청', request_at__icontains=today)
-    # msg_list = KkoMsg.objects.filter(agency_name='FURIXON')
+    # msg_list = KkoMsg.objects.filter(result='요청', request_at__icontains=today)
+    msg_list = KkoMsg.objects.filter(agency_name='FURIXON', result='요청')
     print(msg_list)
 
 
@@ -71,7 +70,8 @@ def job():
         kko_msg = MsgTemplate.objects.filter(msg_index=msg.msg_index)[0].msg_content
         kko_msg_line = kko_msg.replace('\n', '\r').split('\r')
 
-        kko_image = 'http://furixon501.iptime.org:8001/media/' + str(MsgTemplate.objects.filter(msg_index=msg.msg_index)[0].img_content)
+        # kko_image = 'http://furixon501.iptime.org:8001/media/' + str(MsgTemplate.objects.filter(msg_index=msg.msg_index)[0].img_content)
+        kko_image = 'http://127.0.0.1:8000/media/' + str(MsgTemplate.objects.filter(msg_index=msg.msg_index)[0].img_content)
         kko_link = MsgTemplate.objects.filter(msg_index=msg.msg_index)[0].link_content
 
         print(kko_image)
@@ -86,7 +86,9 @@ def job():
         msg_button = driver.find_element(By.XPATH, '//*[@id="kakaoWrap"]/div[1]/div[2]/div/div[2]/div/form/fieldset/button')
         driver.execute_script("arguments[0].click();", msg_button)
 
-        if kko_image == 'http://furixon501.iptime.org:8001/media/':
+        # if kko_image == 'http://furixon501.iptime.org:8001/media/':
+        #     print('### No images')
+        if kko_image == 'http://127.0.0.1:8000/media/':
             print('### No images')
         else:
             time.sleep(0.5)

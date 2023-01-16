@@ -7,7 +7,7 @@ from import_export.admin import ImportExportModelAdmin
 
 
 # 사이트 타이틀
-admin.site.site_header = "KKO90 - WITHNATURE"
+admin.site.site_header = "KKO90 - WITHNATURAL"
 admin.site.site_title = "KKO90 ADMIN"
 admin.site.index_title = "KKO90 ADMIN"
 admin.empty_value_display = '데이터가 없습니다! ^^;'
@@ -30,6 +30,9 @@ class KkoMsgResource(resources.ModelResource):
 class KkoMsgAdmin(ImportExportModelAdmin):
     list_display = list_display_links = ['agency_name', 'client_name', 'msg_index', 'client_id', 'kko_url', 'request_at', 'send_at', 'result', ]
     resource_classes = [KkoMsgResource]
+
+    search_fields = ['agency_name', 'client_name', 'client_id']
+    list_filter = ['agency_name', 'result']
 
 
 class AgencyResource(resources.ModelResource):
