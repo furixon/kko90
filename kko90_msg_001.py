@@ -22,15 +22,16 @@ import schedule
 import csv
 import os
 
+from selenium.webdriver.remote import remote_connection
+from selenium.webdriver.remote.command import Command
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "kko90.settings")
 
-
+# 장고 서버 패키지 로딩
 import django
 django.setup()
 
-
 from cms.models import KkoMsg, Agency, MsgTemplate
-
 
 
 def job():
@@ -43,8 +44,8 @@ def job():
 
     today = date.today()
     print(today)
-    # msg_list = KkoMsg.objects.filter(result='요청', request_at__icontains=today)
-    msg_list = KkoMsg.objects.filter(agency_name='FURIXON', result='요청')
+    msg_list = KkoMsg.objects.filter(result='요청', request_at__icontains=today)
+    # msg_list = KkoMsg.objects.filter(agency_name='FURIXON', result='요청')
     print(msg_list)
 
 
@@ -62,39 +63,67 @@ def job():
         except Exception as e:
             print('### 드라이버 세션 파일 로딩 에러 : {}'.format(e))
 
-        driver = webdriver.Remote(command_executor=url,desired_capabilities={})
+        # 파일 업로드 에러 방지를 위해 remote_connection.py 파일의 selenium site-package에서 218행을 다음에서 다음으로 변경
+        rmt_con = remote_connection.RemoteConnection(url)
+        rmt_con._commands.update({
+            Command.UPLOAD_FILE: ("POST", "/session/$sessionId/file")
+        })
+
+        driver = webdriver.Remote(command_executor=rmt_con,desired_capabilities={})
         driver.close()   # this prevents the dummy browser
         driver.session_id = session_id
 
+        # 미확인 메시지 리스트 생성
+        chat_list_url = msg.kko_url.split('chats/')[0] + 'chats'
+        chat_id = msg.kko_url.split('chats/')[1]
+        print(chat_list_url, chat_id)
+        driver.get(chat_list_url)
+        time.sleep(1)
+
+        chat_select_id = 'chat-select-' + chat_id
+        chat_element = driver.find_element(By.ID, chat_select_id)
+        chat_element_parent = chat_element.find_element(By.XPATH, '../../../../..')
+
+        try:  # 미확인 메시지 수 확인
+            num_round = int(chat_element_parent.find_element(By.CLASS_NAME, 'num_round').text)
+            txt_name = chat_element_parent.find_element(By.CLASS_NAME, 'txt_name').text
+        except Exception as e:
+            print('### 미확인 메시지 없음 : {}'.format(e))
+            num_round = 0
+            txt_name = chat_element_parent.find_element(By.CLASS_NAME, 'txt_name').text
+        
+        if num_round > 0:
+            print('### 미확인 메시지')
+            print('고객명: {} / 건수: {} / 확인시간:{}'.format(txt_name, num_round, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+
+            # 미확인 메시지 내역 전송
+        
+        # 메시지 전송 시작
         kko_url = msg.kko_url
         kko_msg = MsgTemplate.objects.filter(msg_index=msg.msg_index)[0].msg_content
         kko_msg_line = kko_msg.replace('\n', '\r').split('\r')
-
         # kko_image = 'http://furixon501.iptime.org:8001/media/' + str(MsgTemplate.objects.filter(msg_index=msg.msg_index)[0].img_content)
-        kko_image = 'http://127.0.0.1:8000/media/' + str(MsgTemplate.objects.filter(msg_index=msg.msg_index)[0].img_content)
+        kko_image = os.getcwd() + '/media/' + str(MsgTemplate.objects.filter(msg_index=msg.msg_index)[0].img_content)
         kko_link = MsgTemplate.objects.filter(msg_index=msg.msg_index)[0].link_content
 
-        print(kko_image)
-
-
         driver.get(kko_url)
+        # 메시지 전송
         for msg_line in kko_msg_line:
-            
             driver.find_element(By.XPATH, '//*[@id="chatWrite"]').send_keys(msg_line)
             driver.find_element(By.XPATH, '//*[@id="chatWrite"]').send_keys(Keys.SHIFT + '\n')
-            
         msg_button = driver.find_element(By.XPATH, '//*[@id="kakaoWrap"]/div[1]/div[2]/div/div[2]/div/form/fieldset/button')
         driver.execute_script("arguments[0].click();", msg_button)
 
-        # if kko_image == 'http://furixon501.iptime.org:8001/media/':
-        #     print('### No images')
-        if kko_image == 'http://127.0.0.1:8000/media/':
+        # 이미지 전송
+        img_button = driver.find_element(By.XPATH, '//*[@id="kakaoWrap"]/div[1]/div[2]/div/div[2]/div/form/fieldset/div[2]/div[1]/div[1]/input[@type="file"]')
+        if kko_image == os.getcwd() + '/media/':
             print('### No images')
         else:
             time.sleep(0.5)
-            driver.find_element(By.XPATH, '//*[@id="chatWrite"]').send_keys(kko_image)
-            driver.execute_script("arguments[0].click();", msg_button)
+            print('### 이미지 업로드 {}'.format(kko_image)) 
+            img_button.send_keys(kko_image)
 
+        # 링크 전송
         if kko_link:
             time.sleep(0.5)
             driver.find_element(By.XPATH, '//*[@id="chatWrite"]').send_keys(kko_link)
@@ -102,7 +131,7 @@ def job():
 
         time.sleep(1)
 
-        msg.result = '전송완료'
+        msg.result = '요청'
         msg.save()
 
 # def job_set(adData):
