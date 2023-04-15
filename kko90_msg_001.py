@@ -10,6 +10,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.alert import Alert
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.support.select import Select
 
 from webdriver_manager.chrome import ChromeDriverManager
 
@@ -33,206 +34,160 @@ django.setup()
 
 from cms.models import KkoMsg, Agency, MsgTemplate
 
+import django
+django.setup()
 
-def job():
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "kko90.settings")
+from cms.models import KkoMsg, Agency, MsgTemplate
 
-    import django
-    django.setup()
+def job(agency):
+    # URLS
+    dashboard_url = agency.report_url.split('chats/')[0]
+    chatlist_url = dashboard_url + 'chats/'
 
-    from cms.models import KkoMsg, Agency, MsgTemplate
+    # 웹드라이버 딜레이 시간
+    delay = 3
 
+    # 드라이버 로딩
+    try:
+        with open('./kko90_session_{}.txt'.format(agency.agency_name), 'r') as f:
+            session_list = f.readline().split('||')
+        url = session_list[0]
+        session_id = session_list[1]
+
+        print('### 접속 드라이버 => ', url, session_id)
+
+    except Exception as e:
+        print('### 드라이버 세션 파일 로딩 에러 : {}'.format(e))
+        exit()
+
+    # 파일 업로드 에러 방지를 위해 remote_connection.py 파일의 selenium site-package에서 218행을 다음에서 다음으로 변경
+    rmt_con = remote_connection.RemoteConnection(url)
+    rmt_con._commands.update({
+        Command.UPLOAD_FILE: ("POST", "/session/$sessionId/file")
+    })
+
+    driver = webdriver.Remote(command_executor=rmt_con,desired_capabilities={})
+    driver.close()   # this prevents the dummy browser
+    driver.session_id = session_id
+
+    # 지점의 메시지 리스트 불러오기
     today = date.today()
-    print(today)
-    msg_list = KkoMsg.objects.filter(result='요청', request_at__icontains=today)
-    # msg_list = KkoMsg.objects.filter(agency_name='FURIXON', result='요청')
-    print(msg_list)
+    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    print('### 현재시간 {}'.format(now))
 
+    # msg_list = KkoMsg.objects.filter(result='요청', request_at__icontains=today)
+    msg_list = KkoMsg.objects.filter(agency_name=agency.agency_name, result='요청')
 
-    for msg in msg_list:
+    if msg_list.exists():
+        print('### {} 지점 메시지 전송 시작'.format(agency.agency_name))
 
-        # 세션 파일에서 URL, 세션정보 가져와 기존 큐텐 브라우저 드라이버 연결
-        try:
-            with open('./kko90_session_{}.txt'.format(msg.agency_name), 'r') as f:
-                session_list = f.readline().split('||')
-            url = session_list[0]
-            session_id = session_list[1]
+        # 미확인 메시지 리스트 전송
+        report_msg = '### 미확인 메시지 (확인시간 : {})'.format(now)
+        driver.get(chatlist_url)
+        
+        ## 읽지 않은 상담 리스트 필터링
+        filter_button_select = driver.find_element(By.XPATH, '//*[@id="mArticle"]/div[2]/div[1]/div[1]/button')
+        driver.execute_script("arguments[0].click();", filter_button_select)
 
-            print('### 접속 드라이버 => ', url, session_id)
+        unread_button_select = WebDriverWait(driver, delay).until(EC.presence_of_element_located((By.XPATH, '//*[@id="mArticle"]/div[2]/div[1]/div[1]/div[2]/div/ul/li[3]/button')))
+        driver.execute_script("arguments[0].click();", unread_button_select)
 
-        except Exception as e:
-            print('### 드라이버 세션 파일 로딩 에러 : {}'.format(e))
-
-        # 파일 업로드 에러 방지를 위해 remote_connection.py 파일의 selenium site-package에서 218행을 다음에서 다음으로 변경
-        rmt_con = remote_connection.RemoteConnection(url)
-        rmt_con._commands.update({
-            Command.UPLOAD_FILE: ("POST", "/session/$sessionId/file")
-        })
-
-        driver = webdriver.Remote(command_executor=rmt_con,desired_capabilities={})
-        driver.close()   # this prevents the dummy browser
-        driver.session_id = session_id
-
-        # 미확인 메시지 리스트 생성
-        chat_list_url = msg.kko_url.split('chats/')[0] + 'chats'
-        chat_id = msg.kko_url.split('chats/')[1]
-        print(chat_list_url, chat_id)
-        driver.get(chat_list_url)
+        ## 읽지 않은 상담 조회 및 리포트 생성
         time.sleep(1)
+        txt_name_list = driver.find_elements(By.CLASS_NAME, 'txt_name')
+        num_round_list = driver.find_elements(By.CLASS_NAME, 'num_round')
 
-        chat_select_id = 'chat-select-' + chat_id
-        chat_element = driver.find_element(By.ID, chat_select_id)
-        chat_element_parent = chat_element.find_element(By.XPATH, '../../../../..')
+        if len(txt_name_list) > 0:
+            for txt_name, num_round in zip(txt_name_list, num_round_list):
+                print(txt_name.text, num_round.text)
+                report_msg = report_msg + '\n 고객명: {} / 건수: {}'.format(txt_name.text, num_round.text)
+        else:
+            report_msg = report_msg + '\n 읽지 않은 상담이 없습니다.'
 
-        try:  # 미확인 메시지 수 확인
-            num_round = int(chat_element_parent.find_element(By.CLASS_NAME, 'num_round').text)
-            txt_name = chat_element_parent.find_element(By.CLASS_NAME, 'txt_name').text
-        except Exception as e:
-            print('### 미확인 메시지 없음 : {}'.format(e))
-            num_round = 0
-            txt_name = chat_element_parent.find_element(By.CLASS_NAME, 'txt_name').text
-        
-        if num_round > 0:
-            print('### 미확인 메시지')
-            print('고객명: {} / 건수: {} / 확인시간:{}'.format(txt_name, num_round, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+        ## 읽지 않은 상담 리포트 전송
+        driver.get(agency.report_url)
+        kko_msg_line = report_msg.split('\n')
+        print(kko_msg_line)
 
-            # 미확인 메시지 내역 전송
-        
-        # 메시지 전송 시작
-        kko_url = msg.kko_url
-        kko_msg = MsgTemplate.objects.filter(msg_index=msg.msg_index)[0].msg_content
-        kko_msg_line = kko_msg.replace('\n', '\r').split('\r')
-        # kko_image = 'http://furixon501.iptime.org:8001/media/' + str(MsgTemplate.objects.filter(msg_index=msg.msg_index)[0].img_content)
-        kko_image = os.getcwd() + '/media/' + str(MsgTemplate.objects.filter(msg_index=msg.msg_index)[0].img_content)
-        kko_link = MsgTemplate.objects.filter(msg_index=msg.msg_index)[0].link_content
-
-        driver.get(kko_url)
         # 메시지 전송
         for msg_line in kko_msg_line:
             driver.find_element(By.XPATH, '//*[@id="chatWrite"]').send_keys(msg_line)
             driver.find_element(By.XPATH, '//*[@id="chatWrite"]').send_keys(Keys.SHIFT + '\n')
         msg_button = driver.find_element(By.XPATH, '//*[@id="kakaoWrap"]/div[1]/div[2]/div/div[2]/div/form/fieldset/button')
         driver.execute_script("arguments[0].click();", msg_button)
-
-        # 이미지 전송
-        img_button = driver.find_element(By.XPATH, '//*[@id="kakaoWrap"]/div[1]/div[2]/div/div[2]/div/form/fieldset/div[2]/div[1]/div[1]/input[@type="file"]')
-        if kko_image == os.getcwd() + '/media/':
-            print('### No images')
-        else:
-            time.sleep(0.5)
-            print('### 이미지 업로드 {}'.format(kko_image)) 
-            img_button.send_keys(kko_image)
-
-        # 링크 전송
-        if kko_link:
-            time.sleep(0.5)
-            driver.find_element(By.XPATH, '//*[@id="chatWrite"]').send_keys(kko_link)
-            driver.execute_script("arguments[0].click();", msg_button)
-
         time.sleep(1)
 
-        msg.result = '요청'
-        msg.save()
-
-# def job_set(adData):
-#     print('### job_set 실행')
-#     print(driver)
-#     delay = 3
-
-#     # Q스페셜 페이지 이동
-#     driver.get('https://qsm.qoo10.jp/GMKT.INC.Gsm.Web/QSpecial/QSpecialPlus.aspx')
-#     driver.find_element_by_xpath('//*[@id="s_sid"]').send_keys(adData[2])
-#     driver.find_element_by_xpath('//*[@id="qSpecialSearchBtn"]').click()
-
-#     # driver.implicitly_wait(500)
-
-#     try:
-#         sid_result = WebDriverWait(driver, delay).until(EC.presence_of_element_located((By.XPATH, '//*[@id="__grid_Grid_QSpecialSearchList"]/div[2]/table/tbody/tr[2]/td[1]')))
-#         sid_resultAction = ActionChains(driver)
-#         sid_resultAction.double_click(sid_result).perform()
-
-#         picker_btn = WebDriverWait(driver, delay).until(EC.presence_of_element_located((By.XPATH, '//*[@id="content"]/div[9]/h2')))
-#         # picker_btnAction = ActionChains(driver)
-#         # picker_btnAction.move_to_element(picker_btn).perform()
-#         picker_btn.location_once_scrolled_into_view
-
-#         # driver.find_element_by_xpath('//*[@id="setting_qspecial_plus_info_date"]').click()
-#         # preminum_date = WebDriverWait(driver, delay).until(EC.presence_of_element_located((By.XPATH, '//*[@id="display_date_tbl"]')))
-
-
-#         js = """
-#             var el_1 = document.createElement("tbody");
-#             var el_2 = document.createElement("tr");
-#             var el_3 = document.createElement("td");
-#             el_3.setAttribute("class", "ctgdt_lst");
-#             var el_4 = document.createElement("div");
-#             el_4.setAttribute("value", "{}");
-#             var el_5 = document.createElement("input");
-#             el_5.setAttribute("type", "text");
-#             el_5.setAttribute("name", "qspecial_selected_date_text");
-#             el_5.setAttribute("size", "30");
-#             el_5.setAttribute("value", "{}");
-#             el_5.setAttribute("overcheck", "N");
+        for msg in msg_list:
             
-#             el_4.appendChild(el_5);
-#             el_3.appendChild(el_4);
-#             el_2.appendChild(el_3);
-#             el_1.appendChild(el_2);
-#             document.getElementById("display_date_tbl").appendChild(el_1);
+            # 메시지 전송 시작
+            try:
+                kko_url = msg.kko_url
+                kko_msg = MsgTemplate.objects.filter(msg_index=msg.msg_index)[0].msg_content
+                kko_msg_line = kko_msg.replace('\n', '\r').split('\r')
+                if kko_msg is None:  # 메시지 내용이 없을 경우 다음 대상자로 패스
+                    msg.result = '전송완료'
+                    msg.save()
+                    continue
+                kko_image = os.getcwd() + '/media/' + str(MsgTemplate.objects.filter(msg_index=msg.msg_index)[0].img_content)
+                kko_link = MsgTemplate.objects.filter(msg_index=msg.msg_index)[0].link_content
 
-#             document.getElementById("setting_qspecial_plus_info_date_text").setAttribute("value", "{}");            
-#         """.format(adData[1], adData[1], adData[1])
+                driver.get(kko_url)
+                # 메시지 전송
+                for msg_line in kko_msg_line:
+                    driver.find_element(By.XPATH, '//*[@id="chatWrite"]').send_keys(msg_line)
+                    driver.find_element(By.XPATH, '//*[@id="chatWrite"]').send_keys(Keys.SHIFT + '\n')
+                msg_button = driver.find_element(By.XPATH, '//*[@id="kakaoWrap"]/div[1]/div[2]/div/div[2]/div/form/fieldset/button')
+                driver.execute_script("arguments[0].click();", msg_button)
 
-#         driver.execute_script(js)
+                # 이미지 전송
+                img_button = driver.find_element(By.XPATH, '//*[@id="kakaoWrap"]/div[1]/div[2]/div/div[2]/div/form/fieldset/div[2]/div[1]/div[1]/input[@type="file"]')
+                if kko_image == os.getcwd() + '/media/':
+                    print('### No images')
+                else:
+                    time.sleep(0.5)
+                    print('### 이미지 업로드 {}'.format(kko_image)) 
+                    img_button.send_keys(kko_image)
 
-#         if adData[3] == 'M':
-#             set_landing_js = '''
-#                 document.getElementById("rdo_detail_landing_type_qspecial").removeAttribute("checked")
-#                 document.getElementById("rdo_detail_landing_type_sellershop").setAttribute("checked", "checked")
-#             '''
-#             driver.execute_script(set_landing_js)
+                # 링크 전송
+                if kko_link:
+                    time.sleep(0.5)
+                    driver.find_element(By.XPATH, '//*[@id="chatWrite"]').send_keys(kko_link)
+                    driver.execute_script("arguments[0].click();", msg_button)
 
-#     except Exception as e:
-#         print(e)
-        
+                time.sleep(1)
 
-# def job_click(jobDriver):
-#     print('### job_click 실행')
-#     delay = 10
+                msg.result = '전송완료'
+                msg.save()
+            except Exception as e:
+                print('### 전송 에러', e)
+                msg.result = '에러'
+                msg.save()
+                continue
+        # 메시지 전송 완료 후 채팅 리스트로 복귀
+        driver.get(chatlist_url)
+    else:
+        print('### {}지점 메시지 요청이 없습니다.'.format(agency.agency_name))
+# 지점 선택
+agency_all = Agency.objects.all()
+agency_count = agency_all.count()
 
-#     try:
-#         # elem = WebDriverWait(driver, delay).until(EC.presence_of_element_located((By.XPATH, '//*[@id="display_date_tbl"]/tbody/tr/td/div/input')))
+print('### 전체 지점 수 => ', agency_count)
 
-#         # if elem:
-#         #     print('속성 변경')
-#         #     jobDriver.execute_script("arguments[0].setAttribute('overcheck','N')", elem)
-#         #     jobDriver.execute_script("arguments[0].setAttribute('value', ad_date)", elem)
+for a in agency_all:
+    print(a.agency_name)
 
-#         while True:
-#             jobDriver.find_element_by_xpath('//*[@id="QspecialPlus_request"]').click()
-#             WebDriverWait(jobDriver, delay).until(EC.alert_is_present())
-#             alert = jobDriver.switch_to.alert
-#             print(alert.text)
-#             alert.accept()
-#             WebDriverWait(jobDriver, delay).until(EC.alert_is_present())
-#             alert = jobDriver.switch_to.alert
-#             print(alert.text)
-#             alert.accept()
+# 지점 선택
+select_agency_name = input('### 지점 선택 => ')
 
-#     except Exception as e:
-#         print(e)
+try:
+    agency = agency_all.get(agency_name=select_agency_name)
+except Exception as e:
+    print('### 해당 지점 정보가 없습니다.', e)
+    exit()
 
-
-# # schedule.every().day.at("22:11:00").do(job_set, driver)
-# # schedule.every().day.at("22:11:10").do(job_click, driver)
-
-# # scheduler1 = schedule.Scheduler()
-
-# # job_set(today_ad_list[today_ad_no - 1])
-# schedule.every().day.at("10:59:40").do(job_set, today_ad_list[today_ad_no - 1])
-schedule.every(1).seconds.do(job)
+schedule.every(60).seconds.do(job, agency)
 
 while True:
     schedule.run_pending()
-    print('### 주기')
+    print('### {} 지점 스케줄 데몬 실행중'.format(agency.agency_name))
     time.sleep(1)  # 1초 주기

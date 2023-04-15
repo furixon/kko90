@@ -35,26 +35,31 @@ from cms.models import KkoMsg, Agency
 # 상용 지점 계정
 agency_all = Agency.objects.all()
 
-# 테스트 지점 계
+# 테스트 지점
 # agency_all = Agency.objects.filter(agency_name='FURIXON')
 
 agency_count = agency_all.count()
 
 print('### 전체 지점 수 => ', agency_count)
-print('### Agency', agency_all)
 
-# LOGIN_INFO = {
-#     'siteUrl': 'https://center-pf.kakao.com/',
-#     'homeUrl': 'https://qsm.qoo10.jp/GMKT.INC.Gsm.Web/default.aspx',
-#     'userId': 'javis.furixon@gmail.com',
-#     'userPassword': 'const209!!'
-# }
+for a in agency_all:
+    print(a.agency_name)
+
+# 지점 선택
+select_agency_name = input('### 지점 선택 => ')
+
+try:
+    agency = agency_all.get(agency_name=select_agency_name)
+except Exception as e:
+    print('### 해당 지점 정보가 없습니다.', e)
+    exit()
 
 LOGIN_INFO = {
     'siteUrl': 'https://center-pf.kakao.com/',
 }
 
 def get_driver(agency):
+    print('### {} 지점 드라이버 세팅 시작'.format(agency.agency_name))
     # 크롬 드라이버 로딩
     jobDriver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
 
@@ -63,19 +68,11 @@ def get_driver(agency):
 
     print('### 웹 드라이버 로딩을 시작합니다.........\n')
     
-
     # 카카오 로그인
-    jobDriver.find_element(By.XPATH, '//*[@id="input-loginKey"]').send_keys(agency.kko_id)
-    
-    jobDriver.find_element(By.XPATH, '//*[@id="input-password"]').send_keys(agency.kko_pass)
-
-
-
+    jobDriver.find_element(By.XPATH, '//*[@id="loginKey--1"]').send_keys(agency.kko_id)
+    jobDriver.find_element(By.XPATH, '//*[@id="password--2"]').send_keys(agency.kko_pass)
 
     try:
-        # 캡챠 처리
-        # capcha = input('Input Capcha Text : ')
-        # jobDriver.find_element_by_xpath('recaptcha_response_field').send_keys(capcha)
         jobDriver.find_element(By.XPATH, '//*[@id="mainContent"]/div/div/form/div[4]/button[1]').click()
 
         print('### 로그인이 완료되었습니다............\n')
@@ -89,10 +86,6 @@ def get_driver(agency):
         jobDriver.find_element(By.XPATH, '//*[@id="login-form"]/fieldset/div[8]/button[1]').click()
 
         print('로그인이 완료되었습니다............\n')
-
-    # # 한국어로 변경
-    # jobDriver.find_element_by_xpath('//*[@id="header"]/div[1]/div[1]/a/span').click()
-    # jobDriver.find_element_by_xpath('//*[@id="LayerSelectLang"]/ul/li[1]/span/a').click()
 
     url = jobDriver.command_executor._url
     session_id = jobDriver.session_id
@@ -109,10 +102,11 @@ def get_driver(agency):
     return jobDriver
 
 def job(driverData):
-    jobDriver = driverData[0]
-    driverName = driverData[1].agency_name
+    jobDriver = driverData[0]  # 크롬 드라이버
+    agencyName = driverData[1].agency_name  # 에이전시
 
-    print('### Keep Alive!')
+    
+    print('### {} 지점 Keep Alive!'.format(agencyName))
     jobDriver.refresh()
 
     url = jobDriver.command_executor._url
@@ -121,7 +115,7 @@ def job(driverData):
     print('Browser URL : ', url)
     print('Session ID : ', session_id)
 
-    with open('./kko90_session_{}.txt'.format(driverName), 'w') as f:
+    with open('./kko90_session_{}.txt'.format(agencyName), 'w') as f:
         f.write(url)
         f.write('||')
         f.write(session_id)
@@ -130,26 +124,9 @@ def job(driverData):
     # driver.get('https://qsm.qoo10.jp/GMKT.INC.Gsm.Web/Goods/GoodsAnalytics.aspx')
 
 
-# 드라이버 갯수 입력
-# driver_count = int(input('### 드라이버 갯수 입력 (1~9) => '))
-# driver_count = agency_count
-
-for agency in agency_all:
-    # driver_name = "{}".format(agency.agency_name)
-    driver = get_driver(agency)
-    schedule.every().hour.at(":33").do(job, [driver, agency])  # 매시 10분에 리프레쉬
-
-
-
-# schedule.every().hour.at(":10").do(job, [driver1, "d1"])  # 매시 10분에 리프레쉬
-# schedule.every().hour.at(":10").do(job, [driver2, "d2"])
-# schedule.every().hour.at(":10").do(job, [driver3, "d3"])
-# schedule.every().hour.at(":10").do(job, [driver4, "d4"])
-# schedule.every().hour.at(":10").do(job, [driver5, "d5"])
-# schedule.every().hour.at(":10").do(job, [driver6, "d6"])
-# schedule.every().hour.at(":10").do(job, [driver7, "d7"])
-# schedule.every().hour.at(":10").do(job, [driver8, "d8"])
-# schedule.every().hour.at(":10").do(job, [driver9, "d9"])
+# driver_name = "{}".format(agency.agency_name)
+driver = get_driver(agency)
+schedule.every().hour.at(":00").do(job, [driver, agency])  # 매시 00분에 리프레쉬
 
 while True:
     schedule.run_pending()

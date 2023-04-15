@@ -39,11 +39,15 @@ class AgencyResource(resources.ModelResource):
 
     class Meta:
         model = Agency
+        skip_unchanged = True
+        report_skipped = False
+        exclude = ('id', 'reg_at', 'update_at')
+        import_id_fields = ('agency_name', )
 
 
 @admin.register(Agency)
 class AgencyAdmin(ImportExportModelAdmin):
-    list_display = list_display_links = ['agency_name', 'kko_id', 'kko_pass', 'reg_at', 'update_at',]
+    list_display = list_display_links = ['agency_name', 'kko_id', 'kko_pass', 'report_owner_name', 'report_owner_tel', 'report_url']
     resource_classes = [AgencyResource]
 
 

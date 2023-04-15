@@ -26,6 +26,9 @@ class Agency(models.Model):
     agency_name = models.CharField(max_length=128, verbose_name='지점명', blank=True, null=True)
     kko_id = models.CharField(max_length=128, verbose_name='카카오 아이디', blank=True, null=True)
     kko_pass = models.CharField(max_length=128, verbose_name='카카오 비번', blank=True, null=True)
+    report_url = models.CharField(max_length=256, verbose_name='리포트 수신', blank=True, null=True)
+    report_owner_name = models.CharField(max_length=128, verbose_name='인증담당자', blank=True, null=True)
+    report_owner_tel = models.CharField(max_length=128, verbose_name='인증담당 연락처', blank=True, null=True)
     reg_at = models.DateTimeField(auto_now_add=True, verbose_name='등록일시')
     update_at = models.DateTimeField(auto_now=True, verbose_name='업데이트')
 
