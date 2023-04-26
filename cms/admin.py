@@ -33,6 +33,13 @@ class KkoMsgAdmin(ImportExportModelAdmin):
 
     search_fields = ['agency_name', 'client_name', 'client_id']
     list_filter = ['agency_name', 'result']
+    actions = ['set_status_complete', ]
+
+    def set_status_complete(self, request, queryset):
+        queryset.all().update(result='전송완료')
+
+        self.message_user(request, '### 상태변경 완료')
+    set_status_complete.short_description = '[0] 상태변경 - 전송완료'
 
 
 class AgencyResource(resources.ModelResource):
