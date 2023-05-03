@@ -33,13 +33,19 @@ class KkoMsgAdmin(ImportExportModelAdmin):
 
     search_fields = ['agency_name', 'client_name', 'client_id']
     list_filter = ['agency_name', 'result']
-    actions = ['set_status_complete', ]
+    actions = ['set_status_complete', 'delete_selected_item']
 
     def set_status_complete(self, request, queryset):
         queryset.all().update(result='전송완료')
 
         self.message_user(request, '### 상태변경 완료')
     set_status_complete.short_description = '[0] 상태변경 - 전송완료'
+
+    def delete_selected_item(self, request, queryset):
+        queryset.all().delete()
+
+        self.message_user(request, '### Items are deleted')
+    delete_selected_item.short_description = '[1] Delete items'
 
 
 class AgencyResource(resources.ModelResource):

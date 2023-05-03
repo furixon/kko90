@@ -1,0 +1,203 @@
+'''
+    * KKO90 Auto Message Sender v1.0
+    * Copyright (c) 2022 Furixon, Inc. All Rights Reserved.
+'''
+
+from selenium import webdriver
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.alert import Alert
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.support.select import Select
+from selenium.webdriver.chrome.service import Service
+
+from webdriver_manager.chrome import ChromeDriverManager
+
+# from bs4 import BeautifulSoup
+# from rakutenAutoLib_oy import *
+import sys
+import time
+from datetime import datetime, timedelta, date
+import schedule
+import csv
+import os
+import pickle
+
+from selenium.webdriver.remote import remote_connection
+from selenium.webdriver.remote.command import Command
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "kko90.settings")
+
+# 장고 서버 패키지 로딩
+import django
+django.setup()
+
+from cms.models import KkoMsg, Agency, MsgTemplate
+
+import django
+django.setup()
+
+from cms.models import KkoMsg, Agency, MsgTemplate
+
+
+def get_agency_driver(agency):
+    LOGIN_INFO = {
+        'siteUrl': 'https://business.kakao.com/',
+        'loginUrl': 'https://center-pf.kakao.com/',
+    }
+
+    jobDriver = webdriver.Chrome(service=Service(ChromeDriverManager(path='./drivers').install()))
+
+    jobDriver.implicitly_wait(3)
+    jobDriver.get(LOGIN_INFO['siteUrl'])
+    time.sleep(1)
+
+    cookies = pickle.load(open("{}.pickle".format(agency.agency_name), 'rb'))
+    print(cookies)
+
+    for cookie in cookies:
+
+        print(cookie)
+        jobDriver.add_cookie(cookie)
+
+    jobDriver.get(LOGIN_INFO['loginUrl'])
+    time.sleep(1)
+
+    return jobDriver
+
+
+def job(agency):
+    # URLS
+    dashboard_url = agency.report_url.split('chats/')[0]
+    chatlist_url = dashboard_url + 'chats/'
+
+    # 웹드라이버 딜레이 시간
+    delay = 3
+
+    # 지점의 메시지 리스트 불러오기
+    today = date.today()
+    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    print('### 현재시간 {}'.format(now))
+
+    # msg_list = KkoMsg.objects.filter(result='요청', request_at__icontains=today)
+    msg_list = KkoMsg.objects.filter(agency_name=agency.agency_name, result='요청')
+
+    if msg_list.exists():
+        print('### {} 지점 메시지 전송 시작'.format(agency.agency_name))
+
+        # 웹드라이버 로딩
+        driver = get_agency_driver(agency)
+
+        # 미확인 메시지 리스트 전송
+        report_msg = '### 미확인 메시지 (확인시간 : {})'.format(now)
+        driver.get(chatlist_url)
+        
+        ## 읽지 않은 상담 리스트 필터링
+        filter_button_select = driver.find_element(By.XPATH, '//*[@id="mArticle"]/div[2]/div[1]/div[1]/button')
+        driver.execute_script("arguments[0].click();", filter_button_select)
+
+        unread_button_select = WebDriverWait(driver, delay).until(EC.presence_of_element_located((By.XPATH, '//*[@id="mArticle"]/div[2]/div[1]/div[1]/div[2]/div/ul/li[3]/button')))
+        driver.execute_script("arguments[0].click();", unread_button_select)
+
+        ## 읽지 않은 상담 조회 및 리포트 생성
+        time.sleep(1)
+        txt_name_list = driver.find_elements(By.CLASS_NAME, 'txt_name')
+        num_round_list = driver.find_elements(By.CLASS_NAME, 'num_round')
+
+        if len(txt_name_list) > 0:
+            for txt_name, num_round in zip(txt_name_list, num_round_list):
+                print(txt_name.text, num_round.text)
+                report_msg = report_msg + '\n 고객명: {} / 건수: {}'.format(txt_name.text, num_round.text)
+        else:
+            report_msg = report_msg + '\n 읽지 않은 상담이 없습니다.'
+
+        ## 읽지 않은 상담 리포트 전송
+        driver.get(agency.report_url)
+        kko_msg_line = report_msg.split('\n')
+        print(kko_msg_line)
+
+        # 메시지 전송
+        for msg_line in kko_msg_line:
+            driver.find_element(By.XPATH, '//*[@id="chatWrite"]').send_keys(msg_line)
+            driver.find_element(By.XPATH, '//*[@id="chatWrite"]').send_keys(Keys.SHIFT + '\n')
+        msg_button = driver.find_element(By.XPATH, '//*[@id="kakaoWrap"]/div[1]/div[2]/div/div[2]/div/form/fieldset/button')
+        driver.execute_script("arguments[0].click();", msg_button)
+        time.sleep(1)
+
+        for msg in msg_list:
+            
+            # 메시지 전송 시작
+            try:
+                kko_url = msg.kko_url
+                kko_msg = MsgTemplate.objects.filter(msg_index=msg.msg_index)[0].msg_content
+                kko_msg_line = kko_msg.replace('\n', '\r').split('\r')
+                if kko_msg is None:  # 메시지 내용이 없을 경우 다음 대상자로 패스
+                    msg.result = '전송완료'
+                    msg.save()
+                    continue
+                kko_image = os.getcwd() + '/media/' + str(MsgTemplate.objects.filter(msg_index=msg.msg_index)[0].img_content)
+                kko_link = MsgTemplate.objects.filter(msg_index=msg.msg_index)[0].link_content
+
+                driver.get(kko_url)
+                # 메시지 전송
+                for msg_line in kko_msg_line:
+                    driver.find_element(By.XPATH, '//*[@id="chatWrite"]').send_keys(msg_line)
+                    driver.find_element(By.XPATH, '//*[@id="chatWrite"]').send_keys(Keys.SHIFT + '\n')
+                msg_button = driver.find_element(By.XPATH, '//*[@id="kakaoWrap"]/div[1]/div[2]/div/div[2]/div/form/fieldset/button')
+                driver.execute_script("arguments[0].click();", msg_button)
+
+                # 이미지 전송
+                img_button = driver.find_element(By.XPATH, '//*[@id="kakaoWrap"]/div[1]/div[2]/div/div[2]/div/form/fieldset/div[2]/div[1]/div[1]/input[@type="file"]')
+                if kko_image == os.getcwd() + '/media/':
+                    print('### No images')
+                else:
+                    time.sleep(0.5)
+                    print('### 이미지 업로드 {}'.format(kko_image)) 
+                    img_button.send_keys(kko_image)
+
+                # 링크 전송
+                if kko_link:
+                    time.sleep(0.5)
+                    driver.find_element(By.XPATH, '//*[@id="chatWrite"]').send_keys(kko_link)
+                    driver.execute_script("arguments[0].click();", msg_button)
+
+                time.sleep(1)
+
+                msg.result = '전송완료'
+                msg.save()
+            except Exception as e:
+                print('### 전송 에러', e)
+                msg.result = '에러'
+                msg.save()
+                continue
+        # 메시지 전송 완료 후 채팅 리스트로 복귀
+        driver.get(chatlist_url)
+    else:
+        print('### {}지점 메시지 요청이 없습니다.'.format(agency.agency_name))
+# 지점 선택
+agency_all = Agency.objects.all()
+agency_count = agency_all.count()
+
+print('### 전체 지점 수 => ', agency_count)
+
+for a in agency_all:
+    print(a.agency_name)
+
+# 지점 선택
+select_agency_name = input('### 지점 선택 => ')
+
+try:
+    agency = agency_all.get(agency_name=select_agency_name)
+except Exception as e:
+    print('### 해당 지점 정보가 없습니다.', e)
+    exit()
+
+job(agency)
+schedule.every(60).seconds.do(job, agency)
+
+while True:
+    schedule.run_pending()
+    print('### {} 지점 스케줄 데몬 실행중'.format(agency.agency_name))
+    time.sleep(1)  # 1초 주기

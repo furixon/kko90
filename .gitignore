@@ -1,1 +1,3 @@
 venv/
+*.pickle
+kko90_session_*.*

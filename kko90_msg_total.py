@@ -41,7 +41,7 @@ from cms.models import KkoMsg, Agency, MsgTemplate
 
 def job(agency_all):
     for agency in agency_all:
-        if agency.agency_name == 'FURIXON' or agency.agency_name == '천안점' or agency.agency_name == '로하셀 강남본점' or agency.agency_name == '평택점' or agency.agency_name == '전주점'  or agency.agency_name == '천호점':
+        if agency.agency_name == 'FURIXON' or agency.agency_name == '강남본점' or agency.agency_name == '청주점' or agency.agency_name == '동탄점' or agency.agency_name == '제주점' or agency.agency_name == '천안점' or agency.agency_name == '로하셀 강남본점' or agency.agency_name == '평택점' or agency.agency_name == '전주점'  or agency.agency_name == '천호점':
             continue
         # URLS
         dashboard_url = agency.report_url.split('chats/')[0]
