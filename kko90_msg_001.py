@@ -125,7 +125,7 @@ def job(agency):
                 kko_msg = MsgTemplate.objects.filter(msg_index=msg.msg_index)[0].msg_content
                 kko_msg_line = kko_msg.replace('\n', '\r').split('\r')
                 if kko_msg is None:  # 메시지 내용이 없을 경우 다음 대상자로 패스
-                    msg.result = '전송완료'
+                    msg.result = '미전송(내용없음)'
                     msg.save()
                     continue
                 kko_image = os.getcwd() + '/media/' + str(MsgTemplate.objects.filter(msg_index=msg.msg_index)[0].img_content)
@@ -185,6 +185,7 @@ except Exception as e:
     print('### 해당 지점 정보가 없습니다.', e)
     exit()
 
+job(agency)
 schedule.every(60).seconds.do(job, agency)
 
 while True:

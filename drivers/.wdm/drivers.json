@@ -1,0 +1,10 @@
+{
+    "mac64_chromedriver_113.0.5672_for_113.0.5672": {
+        "timestamp": "05/05/2023",
+        "binary_path": "./drivers/.wdm/drivers/chromedriver/mac64/113.0.5672/chromedriver"
+    },
+    "mac64_chromedriver_114.0.5735_for_114.0.5735": {
+        "timestamp": "07/07/2023",
+        "binary_path": "./drivers/.wdm/drivers/chromedriver/mac64/114.0.5735/chromedriver"
+    }
+}

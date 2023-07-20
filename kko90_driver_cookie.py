@@ -62,7 +62,11 @@ LOGIN_INFO = {
 def get_driver(agency):
     print('### {} 지점 드라이버 세팅 시작'.format(agency.agency_name))
     # 크롬 드라이버 로딩
-    jobDriver = webdriver.Chrome(service=Service(ChromeDriverManager(path='./drivers').install()))
+    try:
+        jobDriver = webdriver.Chrome(service=Service('./drivers/chromedriver'))
+    except:
+        print('### 크롬 드라이버 로딩 실패, installing chromedriver.......\n')
+        jobDriver = webdriver.Chrome(service=Service(ChromeDriverManager(path='./drivers').install()))
 
     jobDriver.implicitly_wait(3)
     jobDriver.get(LOGIN_INFO['siteUrl'])

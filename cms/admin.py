@@ -31,6 +31,8 @@ class KkoMsgAdmin(ImportExportModelAdmin):
     list_display = list_display_links = ['agency_name', 'client_name', 'msg_index', 'client_id', 'kko_url', 'request_at', 'send_at', 'result', ]
     resource_classes = [KkoMsgResource]
 
+    date_hierarchy = 'request_at'
+
     search_fields = ['agency_name', 'client_name', 'client_id']
     list_filter = ['agency_name', 'result']
     actions = ['set_status_complete', 'delete_selected_item']
