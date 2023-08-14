@@ -230,6 +230,7 @@ def job_refrsh(agency_all):
 
 
 # 지점 선택
+# target_agency = ['인천점', '명동을지로점', '대구점']
 target_agency = ['일산점', '인천점', '명동을지로점', '대구점']
 agency_all = Agency.objects.filter(agency_name__in=target_agency)
 agency_count = agency_all.count()
@@ -256,8 +257,8 @@ job(agency_all)
 # schedule.every().friday.at('17:00').do(job, agency_all)
 # schedule.every().saturday.at('13:30').do(job, agency_all)
 
-schedule.every().day.at('14:00').do(job, agency_all)
-schedule.every().day.at('17:30').do(job, agency_all)
+schedule.every().day.at('14:10').do(job, agency_all)
+schedule.every().day.at('17:40').do(job, agency_all)
 
 # Refresh
 # schedule.every(3).minutes.do(job_refrsh, agency_all)

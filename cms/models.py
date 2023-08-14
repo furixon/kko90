@@ -22,6 +22,25 @@ class KkoMsg(models.Model):
         return str(self.pk)
 
 
+class KkoMsgEvent(models.Model):
+    # msg_id = models.AutoField(primary_key=True)
+    agency_name = models.CharField(max_length=128, verbose_name='지점명', blank=True, null=True)
+    client_name = models.CharField(max_length=128, verbose_name='고객명', blank=True, null=True)
+    msg_index = models.CharField(max_length=24, verbose_name='이벤트코드')
+    client_id = models.CharField(max_length=128, verbose_name='고객번호', blank=True, null=True)
+    kko_url = models.CharField(max_length=255, verbose_name='카카오링크')
+    request_at = models.DateTimeField(auto_now_add=True, verbose_name='등록일시')
+    send_at = models.DateTimeField(verbose_name='업데이트', blank=True, null=True, auto_now=True)
+    result = models.CharField(max_length=64, default='요청', verbose_name='상태', blank=True, null=True)
+
+    class Meta:
+        verbose_name = '이벤트 메시지 요청'
+        verbose_name_plural = '이벤트 메시지 요청'
+
+    def __str__(self):
+        return str(self.pk)
+
+
 class Agency(models.Model):
     agency_name = models.CharField(max_length=128, verbose_name='지점명', blank=True, null=True)
     kko_id = models.CharField(max_length=128, verbose_name='카카오 아이디', blank=True, null=True)
@@ -58,17 +77,17 @@ class MsgTemplate(models.Model):
 
 
 class PublicMsgTemplate(models.Model):
-    msg_index = models.CharField(max_length=24, verbose_name='차수코드')
+    msg_index = models.CharField(max_length=24, verbose_name='코드')
     msg_content = models.TextField(blank=True, null=True, verbose_name='메시지')
     img_content = models.ImageField(upload_to='images/', null=True, blank=True, verbose_name='이미지')
     link_content = models.URLField(max_length=512, blank=True, null=True, verbose_name='외부링크')
-    start_at = models.DateTimeField(verbose_name='시작일')
-    end_at = models.DateTimeField(verbose_name='종료일')
+    start_at = models.DateTimeField(verbose_name='전송일시')
+    # end_at = models.DateTimeField(verbose_name='종료일')
     update_at = models.DateTimeField(auto_now=True, verbose_name='업데이트')
 
     class Meta:
-        verbose_name = '부가 메시지 템플릿'
-        verbose_name_plural = '부가 메시지 템플릿'
+        verbose_name = '이벤트 메시지 템플릿'
+        verbose_name_plural = '이벤트 메시지 템플릿'
 
     def __str__(self):
         return str(self.pk)

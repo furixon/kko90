@@ -74,7 +74,7 @@ def get_driver(agency):
     print('### 웹 드라이버 로딩을 시작합니다.........\n')
     
     # 카카오 로그인
-    jobDriver.find_element(By.XPATH, '//*[@id="loginKey--1"]').send_keys(agency.kko_id)
+    jobDriver.find_element(By.XPATH, '//*[@id="loginId--1"]').send_keys(agency.kko_id)
     jobDriver.find_element(By.XPATH, '//*[@id="password--2"]').send_keys(agency.kko_pass)
 
     try:

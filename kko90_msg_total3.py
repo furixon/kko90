@@ -248,7 +248,7 @@ print(*agency_all)
 #     print('### 해당 지점 정보가 없습니다.', e)
 #     exit()
 
-job(agency_all)
+# job(agency_all)
 # schedule.every().monday.at('17:00').do(job, agency_all)
 # schedule.every().tuesday.at('17:00').do(job, agency_all)
 # schedule.every().wednesday.at('17:00').do(job, agency_all)
@@ -256,8 +256,8 @@ job(agency_all)
 # schedule.every().friday.at('17:00').do(job, agency_all)
 # schedule.every().saturday.at('13:30').do(job, agency_all)
 
-schedule.every().day.at('14:00').do(job, agency_all)
-schedule.every().day.at('17:30').do(job, agency_all)
+schedule.every().day.at('14:10').do(job, agency_all)
+schedule.every().day.at('17:40').do(job, agency_all)
 
 
 # Refresh

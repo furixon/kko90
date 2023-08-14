@@ -61,7 +61,7 @@ def get_agency_driver(agency):
     time.sleep(1)
 
     # 카카오 로그인
-    jobDriver.find_element(By.XPATH, '//*[@id="loginKey--1"]').send_keys(agency.kko_id)
+    jobDriver.find_element(By.XPATH, '//*[@id="loginId--1"]').send_keys(agency.kko_id)
     jobDriver.find_element(By.XPATH, '//*[@id="password--2"]').send_keys(agency.kko_pass)
 
     try:
@@ -167,7 +167,7 @@ jobDriver.get(LOGIN_INFO['loginUrl'])
 time.sleep(1)
 
 # 카카오 로그인
-jobDriver.find_element(By.XPATH, '//*[@id="loginKey--1"]').send_keys(agency.kko_id)
+jobDriver.find_element(By.XPATH, '//*[@id="loginId--1"]').send_keys(agency.kko_id)
 jobDriver.find_element(By.XPATH, '//*[@id="password--2"]').send_keys(agency.kko_pass)
 
 try:

@@ -50,6 +50,40 @@ class KkoMsgAdmin(ImportExportModelAdmin):
     delete_selected_item.short_description = '[1] Delete items'
 
 
+class KkoMsgEventResource(resources.ModelResource):
+
+    class Meta:
+        model = KkoMsgEvent
+        skip_unchanged = True
+        report_skipped = False
+        exclude = ('id', )
+        import_id_fields = ('client_id', 'msg_index')
+
+
+@admin.register(KkoMsgEvent)
+class KkoMsgEventAdmin(ImportExportModelAdmin):
+    list_display = list_display_links = ['agency_name', 'client_name', 'msg_index', 'client_id', 'kko_url', 'request_at', 'send_at', 'result', ]
+    resource_classes = [KkoMsgEventResource]
+
+    date_hierarchy = 'request_at'
+
+    search_fields = ['agency_name', 'client_name', 'client_id']
+    list_filter = ['agency_name', 'result']
+    actions = ['set_status_complete', 'delete_selected_item']
+
+    def set_status_complete(self, request, queryset):
+        queryset.all().update(result='전송완료')
+
+        self.message_user(request, '### 상태변경 완료')
+    set_status_complete.short_description = '[0] 상태변경 - 전송완료'
+
+    def delete_selected_item(self, request, queryset):
+        queryset.all().delete()
+
+        self.message_user(request, '### Items are deleted')
+    delete_selected_item.short_description = '[1] Delete items'
+
+
 class AgencyResource(resources.ModelResource):
 
     class Meta:
@@ -94,5 +128,5 @@ class PublicMsgTemplateResource(resources.ModelResource):
 
 @admin.register(PublicMsgTemplate)
 class MsgTemplateAdmin(ImportExportModelAdmin):
-    list_display = list_display_links = ['msg_index', 'msg_content', 'img_content', 'link_content', 'start_at', 'end_at', 'update_at', ]
+    list_display = list_display_links = ['msg_index', 'msg_content', 'img_content', 'link_content', 'start_at', 'update_at', ]
     resource_classes = [PublicMsgTemplateResource]
