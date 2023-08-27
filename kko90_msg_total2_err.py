@@ -34,11 +34,6 @@ django.setup()
 
 from cms.models import KkoMsg, Agency, MsgTemplate
 
-import django
-django.setup()
-
-from cms.models import KkoMsg, Agency, MsgTemplate
-
 def job(agency_all):
     for agency in agency_all:
         print('### {} 지점 메시지 전송 시작'.format(agency.agency_name))
@@ -171,9 +166,39 @@ def job(agency_all):
                     msg.save()
                 except Exception as e:
                     print('### 전송 에러', e)
-                    msg.result = '에러'
-                    msg.save()
-                    continue
+                    # 에러 중 채널 추가 요청 안내 팝업 레이어가 원인일 경우 Change layer                    
+                    try:
+                        msg_button = driver.find_element(By.XPATH, '//*[@id="kakaoWrap"]/div[1]/div[2]/div/div[3]/div/form/fieldset/button')
+                        driver.execute_script("arguments[0].click();", msg_button)
+
+                        # 이미지 전송
+                        img_button = driver.find_element(By.XPATH, '//*[@id="kakaoWrap"]/div[1]/div[2]/div/div[3]/div/form/fieldset/div[2]/div[1]/div[1]/input[@type="file"]')
+                        if kko_image == os.getcwd() + '/media/':
+                            print('### No images')
+                        else:
+                            time.sleep(0.5)
+                            # print('### 이미지 업로드 {}'.format(kko_image)) 
+                            img_button.send_keys(kko_image)
+
+                            # 링크 전송
+                            if kko_link:
+                                time.sleep(0.5)
+                                driver.find_element(By.XPATH, '//*[@id="chatWrite"]').send_keys(kko_link)
+                                driver.execute_script("arguments[0].click();", msg_button)
+
+                            time.sleep(1)
+                            print('### {}지점 {}고객 {} 메시지 전송 완료'.format(msg.agency_name, msg.client_name, msg.msg_index))
+                            msg.result = '전송완료'
+                            msg.save()
+                            continue
+                    except Exception as e:
+                        print('### 전송 에러', e)
+                        time.sleep(1)
+                        print('### {}지점 {}고객 {} 메시지 전송 ERROR!'.format(msg.agency_name, msg.client_name, msg.msg_index))
+                        msg.result = '에러'
+                        msg.save()
+                        continue
+                    
             # 메시지 전송 완료 후 채팅 리스트로 복귀
             driver.get(chatlist_url)
         else:
@@ -232,7 +257,8 @@ def job_refrsh(agency_all):
 
 
 # 지점 선택
-target_agency = ['분당점', '목동점', '원주점']
+target_agency = ['분당점', '목동점']
+
 agency_all = Agency.objects.filter(agency_name__in=target_agency)
 agency_count = agency_all.count()
 
@@ -258,8 +284,8 @@ job(agency_all)
 # schedule.every().friday.at('17:00').do(job, agency_all)
 # schedule.every().saturday.at('13:30').do(job, agency_all)
 
-schedule.every().day.at('13:30').do(job, agency_all)
-schedule.every().day.at('17:00').do(job, agency_all)
+schedule.every().day.at('14:10').do(job, agency_all)
+schedule.every().day.at('17:40').do(job, agency_all)
 
 # Refresh
 # schedule.every(3).minutes.do(job_refrsh, agency_all)
