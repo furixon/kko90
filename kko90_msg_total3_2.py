@@ -47,7 +47,7 @@ def job(agency_all):
 
         # 드라이버 로딩
         try:
-            with open('./kko90_session_{}.txt'.format(agency.agency_name), 'r') as f:
+            with open('./kko90_session_{}_2.txt'.format(agency.agency_name), 'r') as f:
                 session_list = f.readline().split('||')
             url = session_list[0]
             session_id = session_list[1]
@@ -75,55 +75,53 @@ def job(agency_all):
 
         # msg_list = KkoMsg.objects.filter(result='요청', request_at__icontains=today)
         msg_list = KkoMsg.objects.filter(agency_name=agency.agency_name, result='요청')
-        # msg_list_count = int(len(msg_list) / 2)
-        # print(msg_list_count)
-        # msg_list = msg_list[:msg_list_count]
+        # msg_list = msg_list[len(msg_list)/2:]
 
         if msg_list.exists():
             print('### {} 지점 메시지 전송 시작'.format(agency.agency_name))
             msg_list_count = int(len(msg_list) / 2)
             print(msg_list_count)
-            msg_list = msg_list[:msg_list_count]
+            msg_list = msg_list[msg_list_count:]
 
-            try:
-                # 미확인 메시지 리스트 전송
-                report_msg = '### 미확인 메시지 (확인시간 : {})'.format(now)
-                driver.get(chatlist_url)
+            # try:
+            #     # 미확인 메시지 리스트 전송
+            #     report_msg = '### 미확인 메시지 (확인시간 : {})'.format(now)
+            #     driver.get(chatlist_url)
                 
-                ## 읽지 않은 상담 리스트 필터링
-                filter_button_select = driver.find_element(By.XPATH, '//*[@id="mArticle"]/div[2]/div[1]/div[1]/button')
-                driver.execute_script("arguments[0].click();", filter_button_select)
+            #     ## 읽지 않은 상담 리스트 필터링
+            #     filter_button_select = driver.find_element(By.XPATH, '//*[@id="mArticle"]/div[2]/div[1]/div[1]/button')
+            #     driver.execute_script("arguments[0].click();", filter_button_select)
 
-                unread_button_select = WebDriverWait(driver, delay).until(EC.presence_of_element_located((By.XPATH, '//*[@id="mArticle"]/div[2]/div[1]/div[1]/div[2]/div/ul/li[3]/button')))
-                driver.execute_script("arguments[0].click();", unread_button_select)
+            #     unread_button_select = WebDriverWait(driver, delay).until(EC.presence_of_element_located((By.XPATH, '//*[@id="mArticle"]/div[2]/div[1]/div[1]/div[2]/div/ul/li[3]/button')))
+            #     driver.execute_script("arguments[0].click();", unread_button_select)
 
-                ## 읽지 않은 상담 조회 및 리포트 생성
-                time.sleep(1)
-                txt_name_list = driver.find_elements(By.CLASS_NAME, 'txt_name')
-                num_round_list = driver.find_elements(By.CLASS_NAME, 'num_round')
+            #     ## 읽지 않은 상담 조회 및 리포트 생성
+            #     time.sleep(1)
+            #     txt_name_list = driver.find_elements(By.CLASS_NAME, 'txt_name')
+            #     num_round_list = driver.find_elements(By.CLASS_NAME, 'num_round')
 
-                if len(txt_name_list) > 0:
-                    for txt_name, num_round in zip(txt_name_list, num_round_list):
-                        print(txt_name.text, num_round.text)
-                        report_msg = report_msg + '\n 고객명: {} / 건수: {}'.format(txt_name.text, num_round.text)
-                else:
-                    report_msg = report_msg + '\n 읽지 않은 상담이 없습니다.'
+            #     if len(txt_name_list) > 0:
+            #         for txt_name, num_round in zip(txt_name_list, num_round_list):
+            #             print(txt_name.text, num_round.text)
+            #             report_msg = report_msg + '\n 고객명: {} / 건수: {}'.format(txt_name.text, num_round.text)
+            #     else:
+            #         report_msg = report_msg + '\n 읽지 않은 상담이 없습니다.'
 
-                ## 읽지 않은 상담 리포트 전송
-                driver.get(agency.report_url)
-                kko_msg_line = report_msg.split('\n')
-                print(kko_msg_line)
+            #     ## 읽지 않은 상담 리포트 전송
+            #     driver.get(agency.report_url)
+            #     kko_msg_line = report_msg.split('\n')
+            #     print(kko_msg_line)
 
-                # 메시지 전송
-                for msg_line in kko_msg_line:
-                    driver.find_element(By.XPATH, '//*[@id="chatWrite"]').send_keys(msg_line)
-                    driver.find_element(By.XPATH, '//*[@id="chatWrite"]').send_keys(Keys.SHIFT + '\n')
-                # msg_button = driver.find_element(By.XPATH, '//*[@id="kakaoWrap"]/div[1]/div[2]/div/div[2]/div/form/fieldset/button')
-                msg_button = driver.find_element(By.XPATH, '//*[@id="kakaoWrap"]//button[text()="전송"]')
-                driver.execute_script("arguments[0].click();", msg_button)
-                time.sleep(1)
-            except Exception as e:
-                print('### 미확인 메시지 리포트 전송 에러 : {}'.format(e))
+            #     # 메시지 전송
+            #     for msg_line in kko_msg_line:
+            #         driver.find_element(By.XPATH, '//*[@id="chatWrite"]').send_keys(msg_line)
+            #         driver.find_element(By.XPATH, '//*[@id="chatWrite"]').send_keys(Keys.SHIFT + '\n')
+            #     # msg_button = driver.find_element(By.XPATH, '//*[@id="kakaoWrap"]/div[1]/div[2]/div/div[2]/div/form/fieldset/button')
+            #     msg_button = driver.find_element(By.XPATH, '//*[@id="kakaoWrap"]//button[text()="전송"]')
+            #     driver.execute_script("arguments[0].click();", msg_button)
+            #     time.sleep(1)
+            # except Exception as e:
+            #     print('### 미확인 메시지 리포트 전송 에러 : {}'.format(e))
 
 
             # 메시지 전송
@@ -250,7 +248,7 @@ def job_refrsh(agency_all):
 
             # 드라이버 로딩
             try:
-                with open('./kko90_session_{}.txt'.format(agency.agency_name), 'r') as f:
+                with open('./kko90_session_{}_2.txt'.format(agency.agency_name), 'r') as f:
                     session_list = f.readline().split('||')
                 url = session_list[0]
                 session_id = session_list[1]

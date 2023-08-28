@@ -40,8 +40,19 @@ def get_agency_driver(agency):
         'loginUrl': 'https://center-pf.kakao.com/',
     }
 
+    user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36"
+    options = webdriver.ChromeOptions()
+    options.add_argument('headless')
+    # options.add_argument('disable-gpu')
+    options.add_argument('user-agent=' + user_agent)
+    # options.add_argument("incognito")
+    # options.add_argument("no-sandbox")
+    # options.add_argument("disable-dev-shm-usage")
+    # options.add_argument('user-data-dir=/Users/withna/Devcenter/kko90/drivers')
+        
     try:
-        jobDriver = webdriver.Chrome(service=Service('./drivers/chromedriver'))
+        jobDriver = webdriver.Chrome(service=Service('./drivers/chromedriver'), options=options)
+
     except Exception as e:
         jobDriver = webdriver.Chrome(service=Service(ChromeDriverManager(path='./drivers').install()))
 
@@ -60,7 +71,7 @@ def get_agency_driver(agency):
     jobDriver.get(LOGIN_INFO['loginUrl'])
     time.sleep(1)
 
-    # 카카오 로그인
+    # # 카카오 로그인
     # jobDriver.find_element(By.XPATH, '//*[@id="loginId--1"]').send_keys(agency.kko_id)
     # jobDriver.find_element(By.XPATH, '//*[@id="password--2"]').send_keys(agency.kko_pass)
 
@@ -88,7 +99,7 @@ def get_agency_driver(agency):
     print('Session ID : ', session_id)
 
     # url, session_id 파일로 저장
-    with open('./kko90_session_{}.txt'.format(agency.agency_name), 'w') as f:
+    with open('./kko90_session_{}_2.txt'.format(agency.agency_name), 'w') as f:
         f.write(url)
         f.write('||')
         f.write(session_id)
@@ -146,8 +157,19 @@ LOGIN_INFO = {
     'loginUrl': 'https://center-pf.kakao.com/',
 }
 
+user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36"
+options = webdriver.ChromeOptions()
+# options.add_argument('headless')
+# options.add_argument('disable-gpu')
+options.add_argument('user-agent=' + user_agent)
+# options.add_argument("incognito")
+# options.add_argument("no-sandbox")
+# options.add_argument("disable-dev-shm-usage")
+# options.add_argument('user-data-dir=/Users/withna/Devcenter/kko90/drivers')
+        
 try:
-    jobDriver = webdriver.Chrome(service=Service('./drivers/chromedriver'))
+    jobDriver = webdriver.Chrome(service=Service('./drivers/chromedriver'), options=options)
+
 except Exception as e:
     jobDriver = webdriver.Chrome(service=Service(ChromeDriverManager(path='./drivers').install()))
 
@@ -166,7 +188,7 @@ for cookie in cookies:
 jobDriver.get(LOGIN_INFO['loginUrl'])
 time.sleep(1)
 
-# 카카오 로그인
+# # 카카오 로그인
 # jobDriver.find_element(By.XPATH, '//*[@id="loginId--1"]').send_keys(agency.kko_id)
 # jobDriver.find_element(By.XPATH, '//*[@id="password--2"]').send_keys(agency.kko_pass)
 
@@ -194,7 +216,7 @@ print('Browser URL : ', url)
 print('Session ID : ', session_id)
 
 # url, session_id 파일로 저장
-with open('./kko90_session_{}.txt'.format(agency.agency_name), 'w') as f:
+with open('./kko90_session_{}_2.txt'.format(agency.agency_name), 'w') as f:
     f.write(url)
     f.write('||')
     f.write(session_id)
