@@ -79,44 +79,46 @@ def job(agency_all):
         if msg_list.exists():
             print('### {} 지점 이벤트 메시지 전송 시작'.format(agency.agency_name))
 
-            # try:
-            #     # 미확인 메시지 리스트 전송
-            #     report_msg = '### 미확인 메시지 (확인시간 : {})'.format(now)
-            #     driver.get(chatlist_url)
+            try:
+                # 미확인 메시지 리스트 전송
+                report_msg = '### 미확인 메시지 (확인시간 : {})'.format(now)
+                driver.get(chatlist_url)
                 
-            #     ## 읽지 않은 상담 리스트 필터링
-            #     filter_button_select = driver.find_element(By.XPATH, '//*[@id="mArticle"]/div[2]/div[1]/div[1]/button')
-            #     driver.execute_script("arguments[0].click();", filter_button_select)
+                ## 읽지 않은 상담 리스트 필터링
+                filter_button_select = driver.find_element(By.XPATH, '//*[@id="mArticle"]/div[2]/div[1]/div[1]/button')
+                driver.execute_script("arguments[0].click();", filter_button_select)
 
-            #     unread_button_select = WebDriverWait(driver, delay).until(EC.presence_of_element_located((By.XPATH, '//*[@id="mArticle"]/div[2]/div[1]/div[1]/div[2]/div/ul/li[3]/button')))
-            #     driver.execute_script("arguments[0].click();", unread_button_select)
+                unread_button_select = WebDriverWait(driver, delay).until(EC.presence_of_element_located((By.XPATH, '//*[@id="mArticle"]/div[2]/div[1]/div[1]/div[2]/div/ul/li[3]/button')))
+                driver.execute_script("arguments[0].click();", unread_button_select)
 
-            #     ## 읽지 않은 상담 조회 및 리포트 생성
-            #     time.sleep(1)
-            #     txt_name_list = driver.find_elements(By.CLASS_NAME, 'txt_name')
-            #     num_round_list = driver.find_elements(By.CLASS_NAME, 'num_round')
+                ## 읽지 않은 상담 조회 및 리포트 생성
+                time.sleep(1)
+                txt_name_list = driver.find_elements(By.CLASS_NAME, 'txt_name')
+                num_round_list = driver.find_elements(By.CLASS_NAME, 'num_round')
 
-            #     if len(txt_name_list) > 0:
-            #         for txt_name, num_round in zip(txt_name_list, num_round_list):
-            #             print(txt_name.text, num_round.text)
-            #             report_msg = report_msg + '\n 고객명: {} / 건수: {}'.format(txt_name.text, num_round.text)
-            #     else:
-            #         report_msg = report_msg + '\n 읽지 않은 상담이 없습니다.'
+                if len(txt_name_list) > 0:
+                    for txt_name, num_round in zip(txt_name_list, num_round_list):
+                        print(txt_name.text, num_round.text)
+                        report_msg = report_msg + '\n 고객명: {} / 건수: {}'.format(txt_name.text, num_round.text)
+                else:
+                    report_msg = report_msg + '\n 읽지 않은 상담이 없습니다.'
 
-            #     ## 읽지 않은 상담 리포트 전송
-            #     driver.get(agency.report_url)
-            #     kko_msg_line = report_msg.split('\n')
-            #     print(kko_msg_line)
+                ## 읽지 않은 상담 리포트 전송
+                driver.get(agency.report_url)
+                kko_msg_line = report_msg.split('\n')
+                print(kko_msg_line)
 
-            #     # 메시지 전송
-            #     for msg_line in kko_msg_line:
-            #         driver.find_element(By.XPATH, '//*[@id="chatWrite"]').send_keys(msg_line)
-            #         driver.find_element(By.XPATH, '//*[@id="chatWrite"]').send_keys(Keys.SHIFT + '\n')
-            #     msg_button = driver.find_element(By.XPATH, '//*[@id="kakaoWrap"]/div[1]/div[2]/div/div[2]/div/form/fieldset/button')
-            #     driver.execute_script("arguments[0].click();", msg_button)
-            #     time.sleep(1)
-            # except Exception as e:
-            #     print('### 미확인 메시지 리포트 전송 에러 : {}'.format(e))
+                # 메시지 전송
+                for msg_line in kko_msg_line:
+                    driver.find_element(By.XPATH, '//*[@id="chatWrite"]').send_keys(msg_line)
+                    driver.find_element(By.XPATH, '//*[@id="chatWrite"]').send_keys(Keys.SHIFT + '\n')
+                # msg_button = driver.find_element(By.XPATH, '//*[@id="kakaoWrap"]/div[1]/div[2]/div/div[2]/div/form/fieldset/button')
+                msg_button = WebDriverWait(driver, delay).until(EC.presence_of_element_located((By.XPATH, '//*[@id="kakaoWrap"]//button[text()="전송"]')))
+                # msg_button = driver.find_element(By.XPATH, '//*[@id="kakaoWrap"]//button[text()="전송"]')
+                driver.execute_script("arguments[0].click();", msg_button)
+                time.sleep(0.5)
+            except Exception as e:
+                print('### 미확인 메시지 리포트 전송 에러 : {}'.format(e))
 
             # 메시지 전송
             for msg in msg_list:
@@ -138,30 +140,35 @@ def job(agency_all):
                     driver.get(kko_url)
                     # 메시지 전송
                     for msg_line in kko_msg_line:
-                        print(msg_line)
-                        # if msg_line == '\r':
-                            # continue
-                        driver.find_element(By.XPATH, '//*[@id="chatWrite"]').send_keys(msg_line)
-                        driver.find_element(By.XPATH, '//*[@id="chatWrite"]').send_keys(Keys.SHIFT + '\n')
-                    msg_button = driver.find_element(By.XPATH, '//*[@id="kakaoWrap"]/div[1]/div[2]/div/div[2]/div/form/fieldset/button')
+                        chatWrite = WebDriverWait(driver, delay).until(EC.presence_of_element_located((By.XPATH, '//*[@id="chatWrite"]')))
+                        chatWrite.send_keys(msg_line)
+                        chatWrite.send_keys(Keys.SHIFT + '\n')
+                        # driver.find_element(By.XPATH, '//*[@id="chatWrite"]').send_keys(msg_line)
+                        # driver.find_element(By.XPATH, '//*[@id="chatWrite"]').send_keys(Keys.SHIFT + '\n')
+                    # msg_button = driver.find_element(By.XPATH, '//*[@id="kakaoWrap"]/div[1]/div[2]/div/div[2]/div/form/fieldset/button')
+                    msg_button = WebDriverWait(driver, delay).until(EC.presence_of_element_located((By.XPATH, '//*[@id="kakaoWrap"]//button[text()="전송"]')))
+                    # msg_button = driver.find_element(By.XPATH, '//*[@id="kakaoWrap"]//button[text()="전송"]')
                     driver.execute_script("arguments[0].click();", msg_button)
 
                     # 이미지 전송
-                    img_button = driver.find_element(By.XPATH, '//*[@id="kakaoWrap"]/div[1]/div[2]/div/div[2]/div/form/fieldset/div[2]/div[1]/div[1]/input[@type="file"]')
+                    # img_button = driver.find_element(By.XPATH, '//*[@id="kakaoWrap"]/div[1]/div[2]/div/div[2]/div/form/fieldset/div[2]/div[1]/div[1]/input[@type="file"]')
+                    
+                    # img_button = driver.find_element(By.XPATH, '//*[@id="kakaoWrap"]//input[@type="file"]')
                     if kko_image == os.getcwd() + '/media/':
                         print('### No images')
                     else:
-                        time.sleep(0.5)
+                        img_button = WebDriverWait(driver, delay).until(EC.presence_of_element_located((By.XPATH, '//*[@id="kakaoWrap"]//input[@type="file"]')))
                         # print('### 이미지 업로드 {}'.format(kko_image)) 
                         img_button.send_keys(kko_image)
 
                     # 링크 전송
                     if kko_link:
-                        time.sleep(0.5)
-                        driver.find_element(By.XPATH, '//*[@id="chatWrite"]').send_keys(kko_link)
+                        chatWrite = WebDriverWait(driver, delay).until(EC.presence_of_element_located((By.XPATH, '//*[@id="chatWrite"]')))
+                        chatWrite.send_keys(kko_link)
+                        # driver.find_element(By.XPATH, '//*[@id="chatWrite"]').send_keys(kko_link)
                         driver.execute_script("arguments[0].click();", msg_button)
 
-                    time.sleep(0.2)
+                    time.sleep(1)
                     print('### {}지점 {}고객 {} 메시지 전송 완료'.format(msg.agency_name, msg.client_name, msg.msg_index))
                     msg.result = '전송완료'
                     msg.save()
@@ -169,32 +176,34 @@ def job(agency_all):
                     print('### 전송 에러', e)
                     # 에러 중 채널 추가 요청 안내 팝업 레이어가 원인일 경우 Change layer                    
                     try:
-                        msg_button = driver.find_element(By.XPATH, '//*[@id="kakaoWrap"]/div[1]/div[2]/div/div[3]/div/form/fieldset/button')
+                        # msg_button = driver.find_element(By.XPATH, '//*[@id="kakaoWrap"]/div[1]/div[2]/div/div[3]/div/form/fieldset/button')
+                        msg_button = WebDriverWait(driver, delay).until(EC.presence_of_element_located((By.XPATH, '//*[@id="kakaoWrap"]//button[text()="전송"]')))
                         driver.execute_script("arguments[0].click();", msg_button)
 
                         # 이미지 전송
-                        img_button = driver.find_element(By.XPATH, '//*[@id="kakaoWrap"]/div[1]/div[2]/div/div[3]/div/form/fieldset/div[2]/div[1]/div[1]/input[@type="file"]')
+                        # img_button = driver.find_element(By.XPATH, '//*[@id="kakaoWrap"]/div[1]/div[2]/div/div[3]/div/form/fieldset/div[2]/div[1]/div[1]/input[@type="file"]')
                         if kko_image == os.getcwd() + '/media/':
                             print('### No images')
                         else:
-                            time.sleep(0.5)
+                            img_button = WebDriverWait(driver, delay).until(EC.presence_of_element_located((By.XPATH, '//*[@id="kakaoWrap"]//input[@type="file"]')))
                             # print('### 이미지 업로드 {}'.format(kko_image)) 
                             img_button.send_keys(kko_image)
 
                             # 링크 전송
-                            if kko_link:
-                                time.sleep(0.5)
-                                driver.find_element(By.XPATH, '//*[@id="chatWrite"]').send_keys(kko_link)
-                                driver.execute_script("arguments[0].click();", msg_button)
+                        if kko_link:
+                            chatWrite = WebDriverWait(driver, delay).until(EC.presence_of_element_located((By.XPATH, '//*[@id="chatWrite"]')))
+                            chatWrite.send_keys(kko_link)
+                            # driver.find_element(By.XPATH, '//*[@id="chatWrite"]').send_keys(kko_link)
+                            driver.execute_script("arguments[0].click();", msg_button)
 
-                            time.sleep(0.2)
-                            print('### {}지점 {}고객 {} 메시지 전송 완료'.format(msg.agency_name, msg.client_name, msg.msg_index))
-                            msg.result = '전송완료'
-                            msg.save()
-                            continue
+                        time.sleep(0.5)
+                        print('### {}지점 {}고객 {} 메시지 전송 완료'.format(msg.agency_name, msg.client_name, msg.msg_index))
+                        msg.result = '전송완료'
+                        msg.save()
+                        continue
                     except Exception as e:
                         print('### 전송 에러', e)
-                        time.sleep(0.2)
+                        time.sleep(1)
                         print('### {}지점 {}고객 {} 메시지 전송 ERROR!'.format(msg.agency_name, msg.client_name, msg.msg_index))
                         msg.result = '에러'
                         msg.save()
@@ -260,7 +269,8 @@ def job_refrsh(agency_all):
 
 # 지점 선택
 # target_agency = ['인천점', '명동을지로점', '대구점']
-target_agency = ['명동을지로점', ]
+target_agency = ['FURIXON', '유비플러스', '울산점']
+# target_agency_test = ['FURIXON', '유비플러스']
 agency_all = Agency.objects.filter(agency_name__in=target_agency)
 agency_count = agency_all.count()
 
@@ -297,15 +307,16 @@ def eventMsgScheduler():
     now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     print('### 현재시간 {}'.format(now))
     event_msg_list = PublicMsgTemplate.objects.filter(start_at__date=today).order_by('start_at')
+    # event_msg_list = PublicMsgTemplate.objects.all()
     print(event_msg_list)
 
     for event_msg in event_msg_list:
         print('### schedule => ', event_msg.start_at.strftime('%H:%M:%S'))
-        # job(agency_all)
+        job(agency_all)
         schedule.every().day.at(event_msg.start_at.strftime('%H:%M:%S')).do(job, agency_all).tag('daily_job')
 
 
-eventMsgScheduler()
+# eventMsgScheduler()
 schedule.every().day.at('10:00:00').do(eventMsgScheduler)
 
 while True:

@@ -101,8 +101,8 @@ DATABASES = {
         'NAME': 'kko90',
         'USER': 'steve',
         'PASSWORD': 'vbflrtms18@',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'HOST': 'furixon501.iptime.org',
+        'PORT': '55432',
     }
 }
 
